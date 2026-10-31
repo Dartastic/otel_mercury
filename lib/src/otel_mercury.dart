@@ -1,15 +1,16 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_mercury_suppression.dart';
 
 const _tracerName = 'dartastic_otel_libs_mercury';
 
-Tracer _tracer() => OTel.tracerProvider().getTracer(_tracerName);
+APITracer _tracer() => OTelAPI.tracerProvider().getTracer(_tracerName);
 
 class MercuryResult {
+  /// Creates a result.
   const MercuryResult({
     this.accountId,
     this.transactionId,
@@ -38,8 +39,13 @@ class MercuryResult {
   final int? statusCode;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class MercuryCallResult<T> {
+  /// Creates a call result.
   const MercuryCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final MercuryResult? result;
 }
@@ -63,38 +69,38 @@ Future<T> tracedMercury<T>({
   final span = _tracer().startSpan(
     'mercury $operation',
     kind: SpanKind.client,
-    attributes: OTel.attributesFromMap(m),
+    attributes: OTelAPI.attributesFromMap(m),
   );
   try {
     final r = await invoke();
     if (r.result != null) {
       final extras = <Attribute<Object>>[];
       if (r.result!.accountId != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.account.id',
           r.result!.accountId!,
         ));
       }
       if (r.result!.transactionId != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.transaction.id',
           r.result!.transactionId!,
         ));
       }
       if (r.result!.paymentMethod != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.payment_method',
           r.result!.paymentMethod!,
         ));
       }
       if (r.result!.kind != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.transaction.kind',
           r.result!.kind!,
         ));
       }
       if (r.result!.status != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.status',
           r.result!.status!,
         ));
@@ -106,19 +112,19 @@ Future<T> tracedMercury<T>({
         }
       }
       if (r.result!.amountMinor != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'mercury.amount.minor',
           r.result!.amountMinor!,
         ));
       }
       if (r.result!.currency != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'mercury.currency',
           r.result!.currency!,
         ));
       }
       if (r.result!.statusCode != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'http.response.status_code',
           r.result!.statusCode!,
         ));
@@ -129,13 +135,13 @@ Future<T> tracedMercury<T>({
           );
         }
       }
-      if (extras.isNotEmpty) span.addAttributes(OTel.attributes(extras));
+      if (extras.isNotEmpty) span.addAttributes(OTelAPI.attributes(extras));
     }
     return r.value;
   } catch (e, st) {
-    span.addAttributes(OTel.attributes([
-      OTel.attributeString(
-        ErrorResource.errorType.key,
+    span.addAttributes(OTelAPI.attributes([
+      OTelAPI.attributeString(
+        ErrorAttributes.errorType.key,
         e.runtimeType.toString(),
       ),
     ]));
